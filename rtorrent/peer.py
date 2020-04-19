@@ -26,21 +26,23 @@ from rtorrent.common import safe_repr
 Method = rtorrent.rpc.Method
 
 
-class File:
-    """Represents an individual file within a L{Torrent} instance."""
+class Peer:
+    """Represents an individual peer within a L{Torrent} instance."""
 
-    def __init__(self, _rt_obj, info_hash, index, **kwargs):
+    def __init__(self, _rt_obj, info_hash, **kwargs):
         self._rt_obj = _rt_obj
-        self.info_hash = info_hash  # : info hash for the torrent the file is associated with
-        self.index = index  # : The position of the file within the file list
+        self.info_hash = info_hash  # : info hash for the torrent the peer is associated with
         for k in kwargs.keys():
             setattr(self, k, kwargs.get(k, None))
 
-        self.rpc_id = '{0}:f{1}'.format(
-            self.info_hash, self.index)  # : unique id to pass to rTorrent
+        self.rpc_id = '{0}:p{1}'.format(
+            self.info_hash, self.id)  # : unique id to pass to rTorrent
+
+    def __repr__(self):
+        return safe_repr('Peer(id={0})', self.id)
 
     def update(self):
-        """Refresh file data.
+        """Refresh peer data.
 
         @note: All fields are stored as attributes to self.
 
@@ -54,38 +56,44 @@ class File:
 
         multicall.call()
 
-    def __repr__(self):
-        return safe_repr('File(index={0} path="{1}")', self.index, self.path)
-
 
 methods = [
     # RETRIEVERS
-    Method(File, 'get_last_touched', 'f.last_touched'),
-    Method(File, 'get_range_second', 'f.range_second'),
-    Method(File, 'get_size_bytes', 'f.size_bytes'),
-    Method(File, 'get_priority', 'f.priority'),
-    Method(File, 'get_match_depth_next', 'f.match_depth_next'),
-    Method(File, 'is_resize_queued', 'f.is_resize_queued',
+    Method(Peer, 'is_preferred', 'p.is_preferred',
            boolean=True,
            ),
-    Method(File, 'get_range_first', 'f.range_first'),
-    Method(File, 'get_match_depth_prev', 'f.match_depth_prev'),
-    Method(File, 'get_path', 'f.path'),
-    Method(File, 'get_completed_chunks', 'f.completed_chunks'),
-    Method(File, 'get_path_components', 'f.path_components'),
-    Method(File, 'is_created', 'f.is_created',
+    Method(Peer, 'get_down_rate', 'p.down_rate'),
+    Method(Peer, 'is_unwanted', 'p.is_unwanted',
            boolean=True,
            ),
-    Method(File, 'is_open', 'f.is_open',
+    Method(Peer, 'get_peer_total', 'p.peer_total'),
+    Method(Peer, 'get_peer_rate', 'p.peer_rate'),
+    Method(Peer, 'get_port', 'p.port'),
+    Method(Peer, 'is_snubbed', 'p.is_snubbed',
            boolean=True,
            ),
-    Method(File, 'get_size_chunks', 'f.size_chunks'),
-    Method(File, 'get_offset', 'f.offset'),
-    Method(File, 'get_frozen_path', 'f.frozen_path'),
-    Method(File, 'get_path_depth', 'f.path_depth'),
-    Method(File, 'is_create_queued', 'f.is_create_queued',
+    Method(Peer, 'get_id_html', 'p.id_html'),
+    Method(Peer, 'get_up_rate', 'p.up_rate'),
+    Method(Peer, 'is_banned', 'p.banned',
            boolean=True,
            ),
+    Method(Peer, 'get_completed_percent', 'p.completed_percent'),
+    Method(Peer, 'get_id', 'p.id'),
+    Method(Peer, 'is_obfuscated', 'p.is_obfuscated',
+           boolean=True,
+           ),
+    Method(Peer, 'get_down_total', 'p.down_total'),
+    Method(Peer, 'get_client_version', 'p.client_version'),
+    Method(Peer, 'get_address', 'p.address'),
+    Method(Peer, 'is_incoming', 'p.is_incoming',
+           boolean=True,
+           ),
+    Method(Peer, 'is_encrypted', 'p.is_encrypted',
+           boolean=True,
+           ),
+    Method(Peer, 'get_options_str', 'p.options_str'),
+    Method(Peer, 'get_client_version', 'p.client_version'),
+    Method(Peer, 'get_up_total', 'p.up_total'),
 
     # MODIFIERS
 ]

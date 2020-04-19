@@ -1,68 +1,139 @@
-from rtorrent.rpc import RPCObject, BaseMulticallBuilder
+# coding=utf-8
+# This file is part of SickChill.
+#
+# URL: https://sickchill.github.io
+# Git: https://github.com/SickChill/SickChill.git
+#
+# SickChill is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SickChill is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with SickChill. If not, see <http://www.gnu.org/licenses/>.
 
-from rtorrent.rpc.processors import *
+# File based on work done by Medariox
 
+# from rtorrent.rpc import Method
+import rtorrent.rpc
+from rtorrent.common import safe_repr
 
-class Tracker(RPCObject):
-    def __init__(self, context, info_hash, index):
-        super().__init__(context)
-        self.rpc_id = "{0}:t{1}".format(info_hash,index)
-    
-    def rpc_call(self, key, *args):
-        call = super().rpc_call(key, *args)
-        call.get_args().insert(0, self.rpc_id)
-        return call
-
-class TrackerMetadata(object):
-    def __init__(self, results):
-        self.results = results
-
-    def __getattr__(self, item):
-        return lambda: self.results[item]
-
-
-class TrackerMulticallBuilder(BaseMulticallBuilder):
-    __metadata_cls__ = TrackerMetadata
-    __rpc_object_cls__ = Tracker
-    __multicall_rpc_method__ = 't.multicall'
-    
-    def __init__(self, context, torrent):
-        super().__init__(context)
-        self.args.extend([torrent.get_info_hash(), ''])
+Method = rtorrent.rpc.Method
 
 
-Tracker.register_rpc_method('is_enabled', 't.is_enabled', boolean=True)
-Tracker.register_rpc_method('get_id', 't.get_id')
-Tracker.register_rpc_method('get_scrape_incomplete', 't.get_scrape_incomplete')
-Tracker.register_rpc_method('is_open', 't.is_open', boolean=True)
-Tracker.register_rpc_method('get_min_interval', 't.get_min_interval')
-Tracker.register_rpc_method('get_scrape_downloaded', 't.get_scrape_downloaded')
-Tracker.register_rpc_method('get_group', 't.get_group')
-Tracker.register_rpc_method('get_scrape_time_last', 't.get_scrape_time_last',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_type', 't.get_type')
-Tracker.register_rpc_method('get_normal_interval', 't.get_normal_interval')
-Tracker.register_rpc_method('get_url', 't.get_url')
-Tracker.register_rpc_method('get_scrape_complete', 't.get_scrape_complete')
-Tracker.register_rpc_method('get_activity_time_last', 't.activity_time_last',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_activity_time_next', 't.activity_time_next',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_failed_time_last', 't.failed_time_last',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_failed_time_next', 't.failed_time_next',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_success_time_last', 't.success_time_last',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('get_success_time_next', 't.success_time_next',
-        post_processors=[s_to_datetime])
-Tracker.register_rpc_method('can_scrape', 't.can_scrape', boolean=True)
-Tracker.register_rpc_method('get_failed_counter', 't.failed_counter')
-Tracker.register_rpc_method('get_scrape_counter', 't.scrape_counter')
-Tracker.register_rpc_method('get_success_counter', 't.success_counter')
-Tracker.register_rpc_method('is_usable', 't.is_usable', boolean=True)
-Tracker.register_rpc_method('is_busy', 't.is_busy', boolean=True)
-Tracker.register_rpc_method('is_extra_tracker', 't.is_extra_tracker', boolean=True)
-Tracker.register_rpc_method("get_latest_sum_peers", "t.latest_sum_peers")
-Tracker.register_rpc_method("get_latest_new_peers", "t.latest_new_peers")
+class Tracker:
+    """Represents an individual tracker within a L{Torrent} instance."""
 
+    def __init__(self, _rt_obj, info_hash, **kwargs):
+        self._rt_obj = _rt_obj
+        self.info_hash = info_hash  # : info hash for the torrent using this tracker
+        for k in kwargs.keys():
+            setattr(self, k, kwargs.get(k, None))
+
+        # for clarity's sake...
+        self.index = self.group  # : position of tracker within the torrent's tracker list
+        self.rpc_id = '{0}:t{1}'.format(
+            self.info_hash, self.index)  # : unique id to pass to rTorrent
+
+    def __repr__(self):
+        return safe_repr('Tracker(index={0}, url="{1}")',
+                         self.index, self.url)
+
+    def enable(self):
+        """Alias for set_enabled('yes')."""
+        self.set_enabled('yes')
+
+    def disable(self):
+        """Alias for set_enabled('no')."""
+        self.set_enabled('no')
+
+    def update(self):
+        """Refresh tracker data.
+
+        @note: All fields are stored as attributes to self.
+
+        @return: None
+        """
+        multicall = rtorrent.rpc.Multicall(self)
+        retriever_methods = [m for m in methods
+                             if m.is_retriever() and m.is_available(self._rt_obj)]
+        for method in retriever_methods:
+            multicall.add(method, self.rpc_id)
+
+        multicall.call()
+
+
+methods = [
+    # RETRIEVERS
+    Method(Tracker, 'is_enabled', 't.is_enabled', boolean=True),
+    Method(Tracker, 'get_id', 't.id'),
+    Method(Tracker, 'get_scrape_incomplete', 't.scrape_incomplete'),
+    Method(Tracker, 'is_open', 't.is_open', boolean=True),
+    Method(Tracker, 'get_min_interval', 't.min_interval'),
+    Method(Tracker, 'get_scrape_downloaded', 't.scrape_downloaded'),
+    Method(Tracker, 'get_group', 't.group'),
+    Method(Tracker, 'get_scrape_time_last', 't.scrape_time_last'),
+    Method(Tracker, 'get_type', 't.type'),
+    Method(Tracker, 'get_normal_interval', 't.normal_interval'),
+    Method(Tracker, 'get_url', 't.url'),
+    Method(Tracker, 'get_scrape_complete', 't.scrape_complete',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_activity_time_last', 't.activity_time_last',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_activity_time_next', 't.activity_time_next',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_failed_time_last', 't.failed_time_last',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_failed_time_next', 't.failed_time_next',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_success_time_last', 't.success_time_last',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'get_success_time_next', 't.success_time_next',
+           min_version=(0, 8, 9),
+           ),
+    Method(Tracker, 'can_scrape', 't.can_scrape',
+           min_version=(0, 9, 1),
+           boolean=True
+           ),
+    Method(Tracker, 'get_failed_counter', 't.failed_counter',
+           min_version=(0, 8, 9)
+           ),
+    Method(Tracker, 'get_scrape_counter', 't.scrape_counter',
+           min_version=(0, 8, 9)
+           ),
+    Method(Tracker, 'get_success_counter', 't.success_counter',
+           min_version=(0, 8, 9)
+           ),
+    Method(Tracker, 'is_usable', 't.is_usable',
+           min_version=(0, 9, 1),
+           boolean=True
+           ),
+    Method(Tracker, 'is_busy', 't.is_busy',
+           min_version=(0, 9, 1),
+           boolean=True
+           ),
+    Method(Tracker, 'is_extra_tracker', 't.is_extra_tracker',
+           min_version=(0, 9, 1),
+           boolean=True,
+           ),
+    Method(Tracker, 'get_latest_sum_peers', 't.latest_sum_peers',
+           min_version=(0, 9, 0)
+           ),
+    Method(Tracker, 'get_latest_new_peers', 't.latest_new_peers',
+           min_version=(0, 9, 0)
+           ),
+
+    # MODIFIERS
+    Method(Tracker, 'set_enabled', 't.is_enabled.set'),
+]
