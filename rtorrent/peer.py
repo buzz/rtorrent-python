@@ -1,61 +1,59 @@
-# coding=utf-8
-# This file is part of SickChill.
+# Copyright (c) 2013 Chris Lucas, <chris@chrisjlucas.com>
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
 #
-# URL: https://sickchill.github.io
-# Git: https://github.com/SickChill/SickChill.git
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
 #
-# SickChill is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# SickChill is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with SickChill. If not, see <http://www.gnu.org/licenses/>.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# File based on work done by Medariox
+# from rtorrent9.rpc import Method
+import rtorrent9.rpc
 
-# from rtorrent.rpc import Method
-import rtorrent.rpc
-from rtorrent.common import safe_repr
+from rtorrent9.common import safe_repr
 
-Method = rtorrent.rpc.Method
+Method = rtorrent9.rpc.Method
 
 
 class Peer:
     """Represents an individual peer within a L{Torrent} instance."""
-
     def __init__(self, _rt_obj, info_hash, **kwargs):
         self._rt_obj = _rt_obj
         self.info_hash = info_hash  # : info hash for the torrent the peer is associated with
         for k in kwargs.keys():
             setattr(self, k, kwargs.get(k, None))
 
-        self.rpc_id = '{0}:p{1}'.format(
+        self.rpc_id = "{0}:p{1}".format(
             self.info_hash, self.id)  # : unique id to pass to rTorrent
 
     def __repr__(self):
-        return safe_repr('Peer(id={0})', self.id)
+        return safe_repr("Peer(id={0})", self.id)
 
     def update(self):
-        """Refresh peer data.
+        """Refresh peer data
 
         @note: All fields are stored as attributes to self.
 
         @return: None
         """
-        multicall = rtorrent.rpc.Multicall(self)
+        multicall = rtorrent9.rpc.Multicall(self)
         retriever_methods = [m for m in methods
                              if m.is_retriever() and m.is_available(self._rt_obj)]
         for method in retriever_methods:
             multicall.add(method, self.rpc_id)
 
         multicall.call()
-
 
 methods = [
     # RETRIEVERS

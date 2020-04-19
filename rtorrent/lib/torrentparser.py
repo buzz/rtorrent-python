@@ -18,12 +18,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import hashlib
+from rtorrent9.compat import is_py3
 import os.path
 import re
-
-import rtorrent.lib.bencode as bencode
-from rtorrent.compat import is_py3
+import rtorrent9.lib.bencode as bencode
+import hashlib
 
 if is_py3():
     from urllib.request import urlopen  # @UnresolvedImport @UnusedImport
@@ -33,7 +32,7 @@ else:
 
 class TorrentParser():
     def __init__(self, torrent):
-        """Decode and parse given torrent.
+        """Decode and parse given torrent
 
         @param torrent: handles: urls, file paths, string of torrent data
         @type torrent: str
@@ -67,7 +66,7 @@ class TorrentParser():
         return(raw)
 
     def _get_raw_torrent(self):
-        """Get raw torrent data by determining what self.torrent is."""
+        """Get raw torrent data by determining what self.torrent is"""
         # already raw?
         if self._is_raw():
             self.file_type = "raw"

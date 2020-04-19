@@ -1,32 +1,30 @@
-# coding=utf-8
-# This file is part of SickChill.
+# Copyright (c) 2013 Chris Lucas, <chris@chrisjlucas.com>
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
 #
-# URL: https://sickchill.github.io
-# Git: https://github.com/SickChill/SickChill.git
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
 #
-# SickChill is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# SickChill is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with SickChill. If not, see <http://www.gnu.org/licenses/>.
-
-# File based on work done by Medariox
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import inspect
+import rtorrent9
 import re
-
-import rtorrent
-from rtorrent.common import (bool_to_int, convert_version_tuple_to_str,
-                             safe_repr)
-from rtorrent.compat import xmlrpclib
-from rtorrent.err import MethodError
+from rtorrent9.common import bool_to_int, convert_version_tuple_to_str,\
+    safe_repr
+from rtorrent9.err import MethodError
+from rtorrent9.compat import xmlrpclib
 
 
 def get_varname(rpc_call):
@@ -39,17 +37,15 @@ def get_varname(rpc_call):
     # extract variable name from xmlrpc func name
     r = re.match(r'(?:[ptdf]\.)?(.+?)(?:\.set)?$', rpc_call)
     if r:
-        return(r.group(1))
-
-    return(None)
+        return r.group(1)
 
 
 def _handle_unavailable_rpc_method(method, rt_obj):
     msg = "Method isn't available."
     if rt_obj._get_client_version_tuple() < method.min_version:
-        msg = 'This method is only available in ' \
-            'RTorrent version v{0} or later'.format(
-                convert_version_tuple_to_str(method.min_version))
+        msg = "This method is only available in " \
+            "RTorrent version v{0} or later".format(
+            convert_version_tuple_to_str(method.min_version))
 
     raise MethodError(msg)
 
@@ -60,7 +56,7 @@ class DummyClass:
 
 
 class Method:
-    """Represents an individual RPC method."""
+    """Represents an individual RPC method"""
 
     def __init__(self, _class, method_name,
                  rpc_call, docstring=None, varname=None, **kwargs):
@@ -70,14 +66,15 @@ class Method:
         self.rpc_call = rpc_call  # : name of rpc method
         self.docstring = docstring  # : docstring for rpc method (optional)
         self.varname = varname  # : variable for the result of the method call, usually set to self.varname
-        self.min_version = kwargs.get('min_version', (
+        self.min_version = kwargs.get("min_version", (
             0, 0, 0))  # : Minimum version of rTorrent required
-        self.boolean = kwargs.get('boolean', False)  # : returns boolean value?
+        self.boolean = kwargs.get("boolean", False)  # : returns boolean value?
         self.post_process_func = kwargs.get(
-            'post_process_func', None)  # : custom post process function
+            "post_process_func", None)  # : custom post process function
         self.aliases = kwargs.get(
-            'aliases', [])  # : aliases for method (optional)
-        self.required_args = []  #: Arguments required when calling the method (not utilized)
+            "aliases", [])  # : aliases for method (optional)
+        self.required_args = []
+            #: Arguments required when calling the method (not utilized)
 
         self.method_type = self._get_method_type()
 
@@ -87,12 +84,11 @@ class Method:
 
     def __repr__(self):
         return safe_repr("Method(method_name='{0}', rpc_call='{1}')",
-                         self.method_name, self.rpc_call)
+                        self.method_name, self.rpc_call)
 
     def _get_method_type(self):
-        """Determine whether method is a modifier or a retriever."""
-        if self.method_name[:4] == 'set_':
-            return('m')  # modifier
+        """Determine whether method is a modifier or a retriever"""
+        if self.method_name[:4] == "set_": return('m')  # modifier
         else:
             return('r')  # retriever
 
@@ -119,14 +115,14 @@ class Method:
 class Multicall:
     def __init__(self, class_obj, **kwargs):
         self.class_obj = class_obj
-        if class_obj.__class__.__name__ == 'RTorrent':
+        if class_obj.__class__.__name__ == "RTorrent":
             self.rt_obj = class_obj
         else:
             self.rt_obj = class_obj._rt_obj
         self.calls = []
 
     def add(self, method, *args):
-        """Add call to multicall.
+        """Add call to multicall
 
         @param method: L{Method} instance or name of raw RPC method
         @type method: Method or str
@@ -155,7 +151,7 @@ class Multicall:
             print(c)
 
     def call(self):
-        """Execute added multicall calls.
+        """Execute added multicall calls
 
         @return: the results (post-processed), in the order they were added
         @rtype: tuple
@@ -163,7 +159,7 @@ class Multicall:
         m = xmlrpclib.MultiCall(self.rt_obj._get_conn())
         for call in self.calls:
             method, args = call
-            rpc_call = getattr(method, 'rpc_call')
+            rpc_call = getattr(method, "rpc_call")
             getattr(m, rpc_call)(*args)
 
         results = m()
@@ -183,7 +179,7 @@ class Multicall:
 
 
 def call_method(class_obj, method, *args):
-    """Handle single RPC calls.
+    """Handles single RPC calls
 
     @param class_obj: Peer/File/Torrent/Tracker/RTorrent instance
     @type class_obj: object
@@ -194,9 +190,9 @@ def call_method(class_obj, method, *args):
     if method.is_retriever():
         args = args[:-1]
     else:
-        assert args[-1] is not None, 'No argument given.'
+        assert args[-1] is not None, "No argument given."
 
-    if class_obj.__class__.__name__ == 'RTorrent':
+    if class_obj.__class__.__name__ == "RTorrent":
         rt_obj = class_obj
     else:
         rt_obj = class_obj._rt_obj
@@ -210,17 +206,27 @@ def call_method(class_obj, method, *args):
     # only added one method, only getting one result back
     ret_value = m.call()[0]
 
+    ####### OBSOLETE ##########################################################
+    # if method.is_retriever():
+    #    #value = process_result(method, ret_value)
+    #    value = ret_value #MultiCall already processed the result
+    # else:
+    #    # we're setting the user's input to method.varname
+    #    # but we'll return the value that xmlrpc gives us
+    #    value = process_result(method, args[-1])
+    ##########################################################################
+
     return(ret_value)
 
 
 def find_method(rpc_call):
-    """Return L{Method} instance associated with given RPC call."""
+    """Return L{Method} instance associated with given RPC call"""
     method_lists = [
-        rtorrent.methods,
-        rtorrent.file.methods,
-        rtorrent.tracker.methods,
-        rtorrent.peer.methods,
-        rtorrent.torrent.methods,
+        rtorrent9.methods,
+        rtorrent9.file.methods,
+        rtorrent9.tracker.methods,
+        rtorrent9.peer.methods,
+        rtorrent9.torrent.methods,
     ]
 
     for l in method_lists:
@@ -232,7 +238,7 @@ def find_method(rpc_call):
 
 
 def process_result(method, result):
-    """Process given C{B{result}} based on flags set in C{B{method}}.
+    """Process given C{B{result}} based on flags set in C{B{method}}
 
     @param method: L{Method} instance
     @type method: Method
@@ -258,7 +264,7 @@ def process_result(method, result):
 
 
 def _build_rpc_methods(class_, method_list):
-    """Build glorified aliases to raw RPC methods."""
+    """Build glorified aliases to raw RPC methods"""
     instance = None
     if not inspect.isclass(class_):
         instance = class_
@@ -269,29 +275,29 @@ def _build_rpc_methods(class_, method_list):
         if class_name != class_.__name__:
             continue
 
-        if class_name == 'RTorrent':
+        if class_name == "RTorrent":
             caller = lambda self, arg = None, method = m:\
                 call_method(self, method, bool_to_int(arg))
-        elif class_name == 'Torrent':
+        elif class_name == "Torrent":
             caller = lambda self, arg = None, method = m:\
                 call_method(self, method, self.rpc_id,
                             bool_to_int(arg))
-        elif class_name in ['Tracker', 'File']:
-            caller = lambda self, arg = None, method = m:\
-                call_method(self, method, self.rpc_id,
-                            bool_to_int(arg))
-
-        elif class_name == 'Peer':
+        elif class_name in ["Tracker", "File"]:
             caller = lambda self, arg = None, method = m:\
                 call_method(self, method, self.rpc_id,
                             bool_to_int(arg))
 
-        elif class_name == 'Group':
+        elif class_name == "Peer":
+            caller = lambda self, arg = None, method = m:\
+                call_method(self, method, self.rpc_id,
+                            bool_to_int(arg))
+
+        elif class_name == "Group":
             caller = lambda arg = None, method = m: \
                 call_method(instance, method, bool_to_int(arg))
 
         if m.docstring is None:
-            m.docstring = ''
+            m.docstring = ""
 
         # print(m)
         docstring = """{0}

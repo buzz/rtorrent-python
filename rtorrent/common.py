@@ -1,29 +1,29 @@
-# coding=utf-8
-# This file is part of SickChill.
+# Copyright (c) 2013 Chris Lucas, <chris@chrisjlucas.com>
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
 #
-# URL: https://sickchill.github.io
-# Git: https://github.com/SickChill/SickChill.git
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
 #
-# SickChill is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# SickChill is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with SickChill. If not, see <http://www.gnu.org/licenses/>.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# File based on work done by Medariox
 
-from rtorrent.compat import is_py3
+from rtorrent9.compat import is_py3
 
 
 def bool_to_int(value):
-    """Translate Python booleans to RPC-safe integers."""
+    """Translates python booleans to RPC-safe integers"""
     if value is True:
         return("1")
     elif value is False:
@@ -33,7 +33,7 @@ def bool_to_int(value):
 
 
 def cmd_exists(cmds_list, cmd):
-    """Check if given command is in list of available commands.
+    """Check if given command is in list of available commands
 
     @param cmds_list: see L{RTorrent._rpc_methods}
     @type cmds_list: list
@@ -43,11 +43,12 @@ def cmd_exists(cmds_list, cmd):
 
     @return: bool
     """
+
     return(cmd in cmds_list)
 
 
 def find_torrent(info_hash, torrent_list):
-    """Find torrent file in given list of Torrent classes.
+    """Find torrent file in given list of Torrent classes
 
     @param info_hash: info hash of torrent
     @type info_hash: str
@@ -61,11 +62,9 @@ def find_torrent(info_hash, torrent_list):
         if t.info_hash == info_hash:
             return t
 
-    return None
-
 
 def is_valid_port(port):
-    """Check if given port is valid."""
+    """Check if given port is valid"""
     return(0 <= int(port) <= 65535)
 
 
@@ -74,7 +73,8 @@ def convert_version_tuple_to_str(t):
 
 
 def safe_repr(fmt, *args, **kwargs):
-    """Formatter that handles unicode arguments."""
+    """ Formatter that handles unicode arguments """
+
     if not is_py3():
         # unicode fmt can take str args, str fmt cannot take unicode args
         fmt = fmt.decode("utf-8")

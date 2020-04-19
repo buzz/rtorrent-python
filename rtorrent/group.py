@@ -1,27 +1,26 @@
-# coding=utf-8
-# This file is part of SickChill.
+# Copyright (c) 2013 Dean Gardiner, <gardiner91@gmail.com>
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
 #
-# URL: https://sickchill.github.io
-# Git: https://github.com/SickChill/SickChill.git
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
 #
-# SickChill is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# SickChill is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with SickChill. If not, see <http://www.gnu.org/licenses/>.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# File based on work done by Medariox
+import rtorrent9.rpc
 
-import rtorrent.rpc
-
-Method = rtorrent.rpc.Method
+Method = rtorrent9.rpc.Method
 
 
 class Group:
@@ -43,18 +42,18 @@ class Group:
             Method(Group, 'set_upload', 'group.' + self.name + '.ratio.upload.set', varname='upload')
         ]
 
-        rtorrent.rpc._build_rpc_methods(self, self.methods)
+        rtorrent9.rpc._build_rpc_methods(self, self.methods)
 
         # Setup multicall_add method
         caller = lambda multicall, method, *args: \
             multicall.add(method, *args)
-        setattr(self, 'multicall_add', caller)
+        setattr(self, "multicall_add", caller)
 
     def _get_prefix(self):
         return 'group.' + self.name + '.ratio.'
 
     def update(self):
-        multicall = rtorrent.rpc.Multicall(self)
+        multicall = rtorrent9.rpc.Multicall(self)
 
         retriever_methods = [m for m in self.methods
                              if m.is_retriever() and m.is_available(self._rt_obj)]
@@ -75,7 +74,7 @@ class Group:
     def set_command(self, *methods):
         methods = [m + '=' for m in methods]
 
-        m = rtorrent.rpc.Multicall(self)
+        m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(
             m, 'method.set', '',
             self._get_prefix() + 'command',
