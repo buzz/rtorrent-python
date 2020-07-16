@@ -1,3 +1,0 @@
-Documentation for rtorrent-python can be found here:
-http://cjlucas.github.com/rtorrent-python/
-https://github.com/cjlucas/rtorrent-python/wiki

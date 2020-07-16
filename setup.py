@@ -1,7 +1,4 @@
 from setuptools import setup, find_packages
-import os, sys
-
-# version = __import__('rtorrent').__version__
 
 required_pkgs = []
 
@@ -11,20 +8,18 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python",
+    "Programming Language :: Python3",
     "Topic :: Communications :: File Sharing",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 setup(
-    name="rtorrent9",
-    version='1.0.0-alpha',
-    url='https://github.com/sickchill/rtorrent-python',
-    author='Chris Lucas',
-    author_email='miigotu@gmail.com',
-    maintainer='Dustyn Gibson',
-    maintainer_email='miigotu@gmail.com',
-    description='A simple rTorrent interface written in Python',
+    name="rtorrent-rpc",
+    version="1.0.0-alpha",
+    url="https://github.com/buzz/rtorrent-rpc",
+    author="Chris Lucas",
+    maintainer="buzz",
+    description="A simple rTorrent interface written in Python3",
     keywords="rtorrent p2p",
     license="MIT",
     packages=find_packages(),
