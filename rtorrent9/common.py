@@ -19,17 +19,14 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from rtorrent9.compat import is_py3
-
-
 def bool_to_int(value):
     """Translates python booleans to RPC-safe integers"""
     if value is True:
-        return("1")
+        return "1"
     elif value is False:
-        return("0")
+        return "0"
     else:
-        return(value)
+        return value
 
 
 def cmd_exists(cmds_list, cmd):
@@ -44,7 +41,7 @@ def cmd_exists(cmds_list, cmd):
     @return: bool
     """
 
-    return(cmd in cmds_list)
+    return cmd in cmds_list
 
 
 def find_torrent(info_hash, torrent_list):
@@ -65,20 +62,13 @@ def find_torrent(info_hash, torrent_list):
 
 def is_valid_port(port):
     """Check if given port is valid"""
-    return(0 <= int(port) <= 65535)
+    return 0 <= int(port) <= 65535
 
 
 def convert_version_tuple_to_str(t):
-    return(".".join([str(n) for n in t]))
+    return ".".join([str(n) for n in t])
 
 
 def safe_repr(fmt, *args, **kwargs):
     """ Formatter that handles unicode arguments """
-
-    if not is_py3():
-        # unicode fmt can take str args, str fmt cannot take unicode args
-        fmt = fmt.decode("utf-8")
-        out = fmt.format(*args, **kwargs)
-        return out.encode("utf-8")
-    else:
-        return fmt.format(*args, **kwargs)
+    return fmt.format(*args, **kwargs)

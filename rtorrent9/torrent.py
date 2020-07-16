@@ -19,11 +19,11 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import rtorrent9.rpc
+
 # from rtorrent9.rpc import Method
 import rtorrent9.peer
 import rtorrent9.tracker
 import rtorrent9.file
-import rtorrent9.compat
 
 from rtorrent9.common import safe_repr
 
@@ -50,8 +50,9 @@ class Torrent:
         self._call_custom_methods()
 
     def __repr__(self):
-        return safe_repr("Torrent(info_hash=\"{0}\" name=\"{1}\")",
-                        self.info_hash, self.name)
+        return safe_repr(
+            'Torrent(info_hash="{0}" name="{1}")', self.info_hash, self.name
+        )
 
     def _call_custom_methods(self):
         """only calls methods that check instance variables."""
@@ -68,12 +69,19 @@ class Torrent:
         @note: also assigns return value to self.peers
         """
         self.peers = []
-        retriever_methods = [m for m in rtorrent9.peer.methods
-                             if m.is_retriever() and m.is_available(self._rt_obj)]
+        retriever_methods = [
+            m
+            for m in rtorrent9.peer.methods
+            if m.is_retriever() and m.is_available(self._rt_obj)
+        ]
         # need to leave 2nd arg empty (dunno why)
         m = rtorrent9.rpc.Multicall(self)
-        m.add("p.multicall", self.info_hash, "",
-              *[method.rpc_call + "=" for method in retriever_methods])
+        m.add(
+            "p.multicall",
+            self.info_hash,
+            "",
+            *[method.rpc_call + "=" for method in retriever_methods]
+        )
 
         results = m.call()[0]  # only sent one call, only need first result
 
@@ -83,10 +91,9 @@ class Torrent:
             for m, r in zip(retriever_methods, result):
                 results_dict[m.varname] = rtorrent9.rpc.process_result(m, r)
 
-            self.peers.append(Peer(
-                self._rt_obj, self.info_hash, **results_dict))
+            self.peers.append(Peer(self._rt_obj, self.info_hash, **results_dict))
 
-        return(self.peers)
+        return self.peers
 
     def get_trackers(self):
         """Get list of Tracker instances for given torrent.
@@ -97,13 +104,20 @@ class Torrent:
         @note: also assigns return value to self.trackers
         """
         self.trackers = []
-        retriever_methods = [m for m in rtorrent9.tracker.methods
-                             if m.is_retriever() and m.is_available(self._rt_obj)]
+        retriever_methods = [
+            m
+            for m in rtorrent9.tracker.methods
+            if m.is_retriever() and m.is_available(self._rt_obj)
+        ]
 
         # need to leave 2nd arg empty (dunno why)
         m = rtorrent9.rpc.Multicall(self)
-        m.add("t.multicall", self.info_hash, "",
-              *[method.rpc_call + "=" for method in retriever_methods])
+        m.add(
+            "t.multicall",
+            self.info_hash,
+            "",
+            *[method.rpc_call + "=" for method in retriever_methods]
+        )
 
         results = m.call()[0]  # only sent one call, only need first result
 
@@ -113,10 +127,9 @@ class Torrent:
             for m, r in zip(retriever_methods, result):
                 results_dict[m.varname] = rtorrent9.rpc.process_result(m, r)
 
-            self.trackers.append(Tracker(
-                self._rt_obj, self.info_hash, **results_dict))
+            self.trackers.append(Tracker(self._rt_obj, self.info_hash, **results_dict))
 
-        return(self.trackers)
+        return self.trackers
 
     def get_files(self):
         """Get list of File instances for given torrent.
@@ -128,18 +141,26 @@ class Torrent:
         """
 
         self.files = []
-        retriever_methods = [m for m in rtorrent9.file.methods
-                             if m.is_retriever() and m.is_available(self._rt_obj)]
+        retriever_methods = [
+            m
+            for m in rtorrent9.file.methods
+            if m.is_retriever() and m.is_available(self._rt_obj)
+        ]
         # 2nd arg can be anything, but it'll return all files in torrent
         # regardless
         m = rtorrent9.rpc.Multicall(self)
-        m.add("f.multicall", self.info_hash, "",
-              *[method.rpc_call + "=" for method in retriever_methods])
+        m.add(
+            "f.multicall",
+            self.info_hash,
+            "",
+            *[method.rpc_call + "=" for method in retriever_methods]
+        )
 
         results = m.call()[0]  # only sent one call, only need first result
 
         offset_method_index = retriever_methods.index(
-            rtorrent9.rpc.find_method("f.offset"))
+            rtorrent9.rpc.find_method("f.offset")
+        )
 
         # make a list of the offsets of all the files, sort appropriately
         offset_list = sorted([r[offset_method_index] for r in results])
@@ -154,16 +175,17 @@ class Torrent:
             # offset)
             f_index = offset_list.index(results_dict["offset"])
 
-            self.files.append(File(self._rt_obj, self.info_hash,
-                                   f_index, **results_dict))
+            self.files.append(
+                File(self._rt_obj, self.info_hash, f_index, **results_dict)
+            )
 
-        return(self.files)
+        return self.files
 
     def get_state(self):
         m = rtorrent9.rpc.Multicall(self)
-        self.multicall_add(m, 'd.state')
+        self.multicall_add(m, "d.state")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def set_directory(self, d):
         """Modify download directory
@@ -196,7 +218,7 @@ class Torrent:
         self.multicall_add(m, "d.is_active")
 
         self.active = m.call()[-1]
-        return(self.active)
+        return self.active
 
     def stop(self):
         """"Stop the torrent"""
@@ -205,28 +227,28 @@ class Torrent:
         self.multicall_add(m, "d.is_active")
 
         self.active = m.call()[-1]
-        return(self.active)
+        return self.active
 
     def pause(self):
         """Pause the torrent"""
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.pause")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def resume(self):
         """Resume the torrent"""
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.resume")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def close(self):
         """Close the torrent and it's files"""
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.close")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def erase(self):
         """Delete the torrent
@@ -235,14 +257,14 @@ class Torrent:
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.erase")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def check_hash(self):
         """(Re)hash check the torrent"""
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.check_hash")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def poll(self):
         """poll rTorrent to get latest peer/tracker/file information"""
@@ -258,8 +280,9 @@ class Torrent:
         @return: None
         """
         multicall = rtorrent9.rpc.Multicall(self)
-        retriever_methods = [m for m in methods
-                             if m.is_retriever() and m.is_available(self._rt_obj)]
+        retriever_methods = [
+            m for m in methods if m.is_retriever() and m.is_available(self._rt_obj)
+        ]
         for method in retriever_methods:
             multicall.add(method, self.rpc_id)
 
@@ -282,19 +305,20 @@ class Torrent:
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, call)
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def announce(self):
         """Announce torrent info to tracker(s)"""
         m = rtorrent9.rpc.Multicall(self)
         self.multicall_add(m, "d.tracker_announce")
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     @staticmethod
     def _assert_custom_key_valid(key):
-        assert type(key) == int and key > 0 and key < 6, \
-            "key must be an integer between 1-5"
+        assert (
+            type(key) == int and key > 0 and key < 6
+        ), "key must be an integer between 1-5"
 
     def get_custom(self, key):
         """
@@ -313,7 +337,7 @@ class Torrent:
         self.multicall_add(m, "d.{0}".format(field))
         setattr(self, field, m.call()[-1])
 
-        return (getattr(self, field))
+        return getattr(self, field)
 
     def set_custom(self, key, value):
         """
@@ -334,7 +358,7 @@ class Torrent:
 
         self.multicall_add(m, "d.custom{0}.set".format(key), value)
 
-        return(m.call()[-1])
+        return m.call()[-1]
 
     def set_visible(self, view, visible=True):
         p = self._rt_obj._get_conn()
@@ -351,8 +375,7 @@ class Torrent:
         """Only checks instance variables, shouldn't be called directly"""
         # if hashing == 3, then torrent is marked for hash checking
         # if hash_checking == False, then torrent is waiting to be checked
-        self.hash_checking_queued = (self.hashing == 3 and
-                                     self.is_hash_checking is False)
+        self.hash_checking_queued = self.hashing == 3 and self.is_hash_checking is False
 
         return self.hash_checking_queued
 
@@ -397,127 +420,102 @@ class Torrent:
 
 methods = [
     # RETRIEVERS
-    Method(Torrent, 'is_hash_checked', 'd.is_hash_checked',
-           boolean=True,
-           ),
-    Method(Torrent, 'is_hash_checking', 'd.is_hash_checking',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_peers_max', 'd.peers_max'),
-    Method(Torrent, 'get_tracker_focus', 'd.tracker_focus'),
-    Method(Torrent, 'get_skip_total', 'd.skip.total'),
-    Method(Torrent, 'get_state', 'd.state'),
-    Method(Torrent, 'get_peer_exchange', 'd.peer_exchange'),
-    Method(Torrent, 'get_down_rate', 'd.down.rate'),
-    Method(Torrent, 'get_connection_seed', 'd.connection_seed'),
-    Method(Torrent, 'get_uploads_max', 'd.uploads_max'),
-    Method(Torrent, 'get_priority_str', 'd.priority_str'),
-    Method(Torrent, 'is_open', 'd.is_open',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_peers_min', 'd.peers_min'),
-    Method(Torrent, 'get_peers_complete', 'd.peers_complete'),
-    Method(Torrent, 'get_tracker_numwant', 'd.tracker_numwant'),
-    Method(Torrent, 'get_connection_current', 'd.connection_current'),
-    Method(Torrent, 'is_complete', 'd.complete',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_peers_connected', 'd.peers_connected'),
-    Method(Torrent, 'get_chunk_size', 'd.chunk_size'),
-    Method(Torrent, 'get_state_counter', 'd.state_counter'),
-    Method(Torrent, 'get_base_filename', 'd.base_filename'),
-    Method(Torrent, 'get_state_changed', 'd.state_changed'),
-    Method(Torrent, 'get_peers_not_connected', 'd.peers_not_connected'),
-    Method(Torrent, 'get_directory', 'd.directory'),
-    Method(Torrent, 'is_incomplete', 'd.incomplete',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_tracker_size', 'd.tracker_size'),
-    Method(Torrent, 'is_multi_file', 'd.is_multi_file',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_local_id', 'd.local_id'),
-    Method(Torrent, 'get_ratio', 'd.ratio',
-           post_process_func=lambda x: x / 1000.0,
-           ),
-    Method(Torrent, 'get_loaded_file', 'd.loaded_file'),
-    Method(Torrent, 'get_max_file_size', 'd.max_file_size'),
-    Method(Torrent, 'get_size_chunks', 'd.size_chunks'),
-    Method(Torrent, 'is_pex_active', 'd.is_pex_active',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_hashing', 'd.hashing'),
-    Method(Torrent, 'get_bitfield', 'd.bitfield'),
-    Method(Torrent, 'get_local_id_html', 'd.local_id_html'),
-    Method(Torrent, 'get_connection_leech', 'd.connection_leech'),
-    Method(Torrent, 'get_peers_accounted', 'd.peers_accounted'),
-    Method(Torrent, 'get_message', 'd.message'),
-    Method(Torrent, 'is_active', 'd.is_active',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_size_bytes', 'd.size_bytes'),
-    Method(Torrent, 'get_ignore_commands', 'd.ignore_commands'),
-    Method(Torrent, 'get_creation_date', 'd.creation_date'),
-    Method(Torrent, 'get_base_path', 'd.base_path'),
-    Method(Torrent, 'get_left_bytes', 'd.left_bytes'),
-    Method(Torrent, 'get_size_files', 'd.size_files'),
-    Method(Torrent, 'get_size_pex', 'd.size_pex'),
-    Method(Torrent, 'is_private', 'd.is_private',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_max_size_pex', 'd.max_size_pex'),
-    Method(Torrent, 'get_num_chunks_hashed', 'd.chunks_hashed',
-           aliases=('get_chunks_hashed',)),
-    Method(Torrent, 'get_num_chunks_wanted', 'd.wanted_chunks'),
-    Method(Torrent, 'get_priority', 'd.priority'),
-    Method(Torrent, 'get_skip_rate', 'd.skip.rate'),
-    Method(Torrent, 'get_completed_bytes', 'd.completed_bytes'),
-    Method(Torrent, 'get_name', 'd.name'),
-    Method(Torrent, 'get_completed_chunks', 'd.completed_chunks'),
-    Method(Torrent, 'get_throttle_name', 'd.throttle_name'),
-    Method(Torrent, 'get_free_diskspace', 'd.free_diskspace'),
-    Method(Torrent, 'get_directory_base', 'd.directory_base'),
-    Method(Torrent, 'get_hashing_failed', 'd.hashing_failed'),
-    Method(Torrent, 'get_tied_to_file', 'd.tied_to_file'),
-    Method(Torrent, 'get_down_total', 'd.down.total'),
-    Method(Torrent, 'get_bytes_done', 'd.bytes_done'),
-    Method(Torrent, 'get_up_rate', 'd.up.rate'),
-    Method(Torrent, 'get_up_total', 'd.up.total'),
-    Method(Torrent, 'is_accepting_seeders', 'd.accepting_seeders',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_chunks_seen', 'd.chunks_seen',
-           min_version=(0, 9, 1),
-           ),
-    Method(Torrent, 'is_partially_done', 'd.is_partially_done',
-           boolean=True,
-           ),
-    Method(Torrent, 'is_not_partially_done', 'd.is_not_partially_done',
-           boolean=True,
-           ),
-    Method(Torrent, 'get_time_started', 'd.timestamp.started'),
-    Method(Torrent, 'get_custom1', 'd.custom1'),
-    Method(Torrent, 'get_custom2', 'd.custom2'),
-    Method(Torrent, 'get_custom3', 'd.custom3'),
-    Method(Torrent, 'get_custom4', 'd.custom4'),
-    Method(Torrent, 'get_custom5', 'd.custom5'),
-
+    Method(Torrent, "is_hash_checked", "d.is_hash_checked", boolean=True,),
+    Method(Torrent, "is_hash_checking", "d.is_hash_checking", boolean=True,),
+    Method(Torrent, "get_peers_max", "d.peers_max"),
+    Method(Torrent, "get_tracker_focus", "d.tracker_focus"),
+    Method(Torrent, "get_skip_total", "d.skip.total"),
+    Method(Torrent, "get_state", "d.state"),
+    Method(Torrent, "get_peer_exchange", "d.peer_exchange"),
+    Method(Torrent, "get_down_rate", "d.down.rate"),
+    Method(Torrent, "get_connection_seed", "d.connection_seed"),
+    Method(Torrent, "get_uploads_max", "d.uploads_max"),
+    Method(Torrent, "get_priority_str", "d.priority_str"),
+    Method(Torrent, "is_open", "d.is_open", boolean=True,),
+    Method(Torrent, "get_peers_min", "d.peers_min"),
+    Method(Torrent, "get_peers_complete", "d.peers_complete"),
+    Method(Torrent, "get_tracker_numwant", "d.tracker_numwant"),
+    Method(Torrent, "get_connection_current", "d.connection_current"),
+    Method(Torrent, "is_complete", "d.complete", boolean=True,),
+    Method(Torrent, "get_peers_connected", "d.peers_connected"),
+    Method(Torrent, "get_chunk_size", "d.chunk_size"),
+    Method(Torrent, "get_state_counter", "d.state_counter"),
+    Method(Torrent, "get_base_filename", "d.base_filename"),
+    Method(Torrent, "get_state_changed", "d.state_changed"),
+    Method(Torrent, "get_peers_not_connected", "d.peers_not_connected"),
+    Method(Torrent, "get_directory", "d.directory"),
+    Method(Torrent, "is_incomplete", "d.incomplete", boolean=True,),
+    Method(Torrent, "get_tracker_size", "d.tracker_size"),
+    Method(Torrent, "is_multi_file", "d.is_multi_file", boolean=True,),
+    Method(Torrent, "get_local_id", "d.local_id"),
+    Method(Torrent, "get_ratio", "d.ratio", post_process_func=lambda x: x / 1000.0,),
+    Method(Torrent, "get_loaded_file", "d.loaded_file"),
+    Method(Torrent, "get_max_file_size", "d.max_file_size"),
+    Method(Torrent, "get_size_chunks", "d.size_chunks"),
+    Method(Torrent, "is_pex_active", "d.is_pex_active", boolean=True,),
+    Method(Torrent, "get_hashing", "d.hashing"),
+    Method(Torrent, "get_bitfield", "d.bitfield"),
+    Method(Torrent, "get_local_id_html", "d.local_id_html"),
+    Method(Torrent, "get_connection_leech", "d.connection_leech"),
+    Method(Torrent, "get_peers_accounted", "d.peers_accounted"),
+    Method(Torrent, "get_message", "d.message"),
+    Method(Torrent, "is_active", "d.is_active", boolean=True,),
+    Method(Torrent, "get_size_bytes", "d.size_bytes"),
+    Method(Torrent, "get_ignore_commands", "d.ignore_commands"),
+    Method(Torrent, "get_creation_date", "d.creation_date"),
+    Method(Torrent, "get_base_path", "d.base_path"),
+    Method(Torrent, "get_left_bytes", "d.left_bytes"),
+    Method(Torrent, "get_size_files", "d.size_files"),
+    Method(Torrent, "get_size_pex", "d.size_pex"),
+    Method(Torrent, "is_private", "d.is_private", boolean=True,),
+    Method(Torrent, "get_max_size_pex", "d.max_size_pex"),
+    Method(
+        Torrent,
+        "get_num_chunks_hashed",
+        "d.chunks_hashed",
+        aliases=("get_chunks_hashed",),
+    ),
+    Method(Torrent, "get_num_chunks_wanted", "d.wanted_chunks"),
+    Method(Torrent, "get_priority", "d.priority"),
+    Method(Torrent, "get_skip_rate", "d.skip.rate"),
+    Method(Torrent, "get_completed_bytes", "d.completed_bytes"),
+    Method(Torrent, "get_name", "d.name"),
+    Method(Torrent, "get_completed_chunks", "d.completed_chunks"),
+    Method(Torrent, "get_throttle_name", "d.throttle_name"),
+    Method(Torrent, "get_free_diskspace", "d.free_diskspace"),
+    Method(Torrent, "get_directory_base", "d.directory_base"),
+    Method(Torrent, "get_hashing_failed", "d.hashing_failed"),
+    Method(Torrent, "get_tied_to_file", "d.tied_to_file"),
+    Method(Torrent, "get_down_total", "d.down.total"),
+    Method(Torrent, "get_bytes_done", "d.bytes_done"),
+    Method(Torrent, "get_up_rate", "d.up.rate"),
+    Method(Torrent, "get_up_total", "d.up.total"),
+    Method(Torrent, "is_accepting_seeders", "d.accepting_seeders", boolean=True,),
+    Method(Torrent, "get_chunks_seen", "d.chunks_seen", min_version=(0, 9, 1),),
+    Method(Torrent, "is_partially_done", "d.is_partially_done", boolean=True,),
+    Method(Torrent, "is_not_partially_done", "d.is_not_partially_done", boolean=True,),
+    Method(Torrent, "get_time_started", "d.timestamp.started"),
+    Method(Torrent, "get_custom1", "d.custom1"),
+    Method(Torrent, "get_custom2", "d.custom2"),
+    Method(Torrent, "get_custom3", "d.custom3"),
+    Method(Torrent, "get_custom4", "d.custom4"),
+    Method(Torrent, "get_custom5", "d.custom5"),
     # MODIFIERS
-    Method(Torrent, 'set_uploads_max', 'd.uploads_max.set'),
-    Method(Torrent, 'set_tied_to_file', 'd.tied_to_file.set'),
-    Method(Torrent, 'set_tracker_numwant', 'd.tracker_numwant.set'),
-    Method(Torrent, 'set_priority', 'd.priority.set'),
-    Method(Torrent, 'set_peers_max', 'd.peers_max.set'),
-    Method(Torrent, 'set_hashing_failed', 'd.hashing_failed.set'),
-    Method(Torrent, 'set_message', 'd.message.set'),
-    Method(Torrent, 'set_throttle_name', 'd.throttle_name.set'),
-    Method(Torrent, 'set_peers_min', 'd.peers_min.set'),
-    Method(Torrent, 'set_ignore_commands', 'd.ignore_commands.set'),
-    Method(Torrent, 'set_max_file_size', 'd.max_file_size.set'),
-    Method(Torrent, 'set_custom5', 'd.custom5.set'),
-    Method(Torrent, 'set_custom4', 'd.custom4.set'),
-    Method(Torrent, 'set_custom2', 'd.custom2.set'),
-    Method(Torrent, 'set_custom1', 'd.custom1.set'),
-    Method(Torrent, 'set_custom3', 'd.custom3.set'),
-    Method(Torrent, 'set_connection_current', 'd.connection_current.set'),
+    Method(Torrent, "set_uploads_max", "d.uploads_max.set"),
+    Method(Torrent, "set_tied_to_file", "d.tied_to_file.set"),
+    Method(Torrent, "set_tracker_numwant", "d.tracker_numwant.set"),
+    Method(Torrent, "set_priority", "d.priority.set"),
+    Method(Torrent, "set_peers_max", "d.peers_max.set"),
+    Method(Torrent, "set_hashing_failed", "d.hashing_failed.set"),
+    Method(Torrent, "set_message", "d.message.set"),
+    Method(Torrent, "set_throttle_name", "d.throttle_name.set"),
+    Method(Torrent, "set_peers_min", "d.peers_min.set"),
+    Method(Torrent, "set_ignore_commands", "d.ignore_commands.set"),
+    Method(Torrent, "set_max_file_size", "d.max_file_size.set"),
+    Method(Torrent, "set_custom5", "d.custom5.set"),
+    Method(Torrent, "set_custom4", "d.custom4.set"),
+    Method(Torrent, "set_custom2", "d.custom2.set"),
+    Method(Torrent, "set_custom1", "d.custom1.set"),
+    Method(Torrent, "set_custom3", "d.custom3.set"),
+    Method(Torrent, "set_connection_current", "d.connection_current.set"),
 ]

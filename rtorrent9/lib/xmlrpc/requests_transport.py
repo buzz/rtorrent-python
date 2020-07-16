@@ -20,10 +20,7 @@ Support:
 -Proxies
 """
 
-try:
-    import xmlrpc.client as xmlrpc_client
-except ImportError:
-    import xmlrpclib as xmlrpc_client
+import xmlrpc.client as xmlrpc_client
 
 import traceback
 
@@ -38,8 +35,15 @@ class RequestsTransport(xmlrpc_client.Transport):
 
     """Transport class for xmlrpc using requests"""
 
-    def __init__(self, use_https=True, authtype=None, username=None,
-                 password=None, check_ssl_cert=True, proxies=None):
+    def __init__(
+        self,
+        use_https=True,
+        authtype=None,
+        username=None,
+        password=None,
+        check_ssl_cert=True,
+        proxies=None,
+    ):
         """Inits RequestsTransport.
 
         Args:
@@ -69,11 +73,9 @@ class RequestsTransport(xmlrpc_client.Transport):
         if authtype == "basic" or authtype == "digest":
             self._authtype = authtype
         else:
-            raise ValueError(
-                "Supported authentication are: basic and digest")
+            raise ValueError("Supported authentication are: basic and digest")
         if authtype and (not username or not password):
-            raise ValueError(
-                "Username and password required when using authentication")
+            raise ValueError("Username and password required when using authentication")
 
         self._username = username
         self._password = password
@@ -105,7 +107,10 @@ class RequestsTransport(xmlrpc_client.Transport):
         if not self._check_ssl_cert:
             disable_warnings()
 
-        headers = {'User-Agent': self.user_agent, 'Content-Type': 'text/xml', }
+        headers = {
+            "User-Agent": self.user_agent,
+            "Content-Type": "text/xml",
+        }
 
         # Need to be done because the schema(http or https) is lost in
         # xmlrpc.Transport's init.
@@ -122,32 +127,32 @@ class RequestsTransport(xmlrpc_client.Transport):
                     data=request_body,
                     headers=headers,
                     verify=self._check_ssl_cert,
-                    auth=HTTPBasicAuth(
-                        self._username, self._password),
-                    proxies=self._proxies)
+                    auth=HTTPBasicAuth(self._username, self._password),
+                    proxies=self._proxies,
+                )
             elif self._authtype == "digest":
                 response = requests.post(
                     url,
                     data=request_body,
                     headers=headers,
                     verify=self._check_ssl_cert,
-                    auth=HTTPDigestAuth(
-                        self._username, self._password),
-                    proxies=self._proxies)
+                    auth=HTTPDigestAuth(self._username, self._password),
+                    proxies=self._proxies,
+                )
             else:
                 response = requests.post(
                     url,
                     data=request_body,
                     headers=headers,
                     verify=self._check_ssl_cert,
-                    proxies=self._proxies)
+                    proxies=self._proxies,
+                )
 
             response.raise_for_status()
         except RequestException as error:
-            raise xmlrpc_client.ProtocolError(url,
-                                              error.message,
-                                              traceback.format_exc(),
-                                              response.headers)
+            raise xmlrpc_client.ProtocolError(
+                url, error.message, traceback.format_exc(), response.headers
+            )
 
         return self.parse_response(response)
 
@@ -163,7 +168,7 @@ class RequestsTransport(xmlrpc_client.Transport):
             Response tuple and target method.
         """
         p, u = self.getparser()
-        p.feed(response.text.encode('utf-8'))
+        p.feed(response.text.encode("utf-8"))
         p.close()
         return u.close()
 
@@ -174,6 +179,7 @@ class RequestsTransport(xmlrpc_client.Transport):
         """
         # TODO Ugly
         import logging
+
         try:
             import http.client as http_client
         except ImportError:
